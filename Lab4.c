@@ -1,8 +1,15 @@
+// FreqEFM8.c: Measure the frequency of a signal on pin T0.
+//
+// By:  Jesus Calvino-Fraga (c) 2008-2018
+//
+// The next line clears the "C51 command line options:" field when compiling with CrossIDE
+//  ~C51~
+  
 #include <EFM8LB1.h>
 #include <stdio.h>
 
-#define SYSCLK    72000000L // SYSCLK frequency in Hz
-#define BAUDRATE    115200L // Baud rate of UART in bps
+#define SYSCLK      72000000L  // SYSCLK frequency in Hz
+#define BAUDRATE      115200L  // Baud rate of UART in bps
 
 #define LCD_RS P1_7
 // #define LCD_RW Px_x // Not used in this code.  Connect to GND
@@ -12,6 +19,7 @@
 #define LCD_D6 P1_1
 #define LCD_D7 P1_0
 #define CHARS_PER_LINE 16
+
 
 unsigned char overflow_count;
 
@@ -84,8 +92,6 @@ char _c51_external_startup (void)
 	return 0;
 }
  
-
-
 // Uses Timer3 to delay <us> micro-seconds. 
 void Timer3us(unsigned char us)
 {
@@ -102,6 +108,11 @@ void Timer3us(unsigned char us)
 	{
 		while (!(TMR3CN0 & 0x80));  // Wait for overflow
 		TMR3CN0 &= ~(0x80);         // Clear overflow indicator
+		if (TF0)
+		{
+		   TF0=0;
+		   overflow_count++;
+		}
 	}
 	TMR3CN0 = 0 ;                   // Stop Timer3 and clear overflow flag
 }
@@ -109,11 +120,21 @@ void Timer3us(unsigned char us)
 void waitms (unsigned int ms)
 {
 	unsigned int j;
-	unsigned char k;
-	for(j=0; j<ms; j++)
-		for (k=0; k<4; k++) Timer3us(250);
+	for(j=ms; j!=0; j--)
+	{
+		Timer3us(249);
+		Timer3us(249);
+		Timer3us(249);
+		Timer3us(250);
+	}
 }
 
+void TIMER0_Init(void)
+{
+	TMOD&=0b_1111_0000; // Set the bits of Timer/Counter 0 to zero
+	TMOD|=0b_0000_0101; // Timer/Counter 0 used as a 16-bit counter
+	TR0=0; // Stop Timer/Counter 0
+}
 void LCD_pulse (void)
 {
 	LCD_E=1;
@@ -201,40 +222,30 @@ int getsn (char * buff, int len)
 	buff[j]=0;
 	return len;
 }
-
-void TIMER0_Init(void)
-{
-	TMOD&=0b_1111_0000; // Set the bits of Timer/Counter 0 to zero
-	TMOD|=0b_0000_0001; // Timer/Counter 0 used as a 16-bit timer
-	TR0=0; // Stop Timer/Counter 0
-}
-
-
-float CalculateCapacitor(unsigned long Frequency)       // F = 1.44/(RA + 2*RB)C  -> C = (F * (RA + 2 * RB))/1.44
-{
-    float Ra;
-    float Rb;
-    float C;
-    Ra = 1690;
-    Rb = 1690;
-    C =  (Frequency * (Ra + 2 * Rb))/ 1.44;
-    return C;
-}
-
+	char buffer[17];
 
 void main (void) 
 {
 	unsigned long F;
-	float C;
-	char string[16];
+	double C;
+	int b1tog = 0;
+	// char buffer[17];
+	
 	TIMER0_Init();
-	LCD_4BIT();
+
 	waitms(500); // Give PuTTY a chance to start.
 	printf("\x1b[2J"); // Clear screen using ANSI escape sequence.
 
-    while (1)
-    {
-    	// Reset the counter
+	printf ("EFM8 Frequency measurement using Timer/Counter 0.\n"
+	        "File: %s\n"
+	        "Compiled: %s, %s\n\n",
+	        __FILE__, __DATE__, __TIME__);
+	        
+	LCD_4BIT();
+	LCDprint("Cap in microF   ", 1, 1);
+
+	while(1)
+	{
 		TL0=0;
 		TH0=0;
 		overflow_count=0;
@@ -243,18 +254,45 @@ void main (void)
 		waitms(1000);
 		TR0=0; // Stop Timer/Counter 0
 		F=overflow_count*0x10000L+TH0*0x100L+TL0;
+		C=1.44/(((long)1550+2*(long)1550)*F)*1000000;
+		printf("------------NEW DATA-------------\n");
+		printf("f=%luHz", F);
+		printf("\n");
+		// if (P3_7==0){
+		// 	while (P3_7);
+		// 	if (b1tog==0){
+		// 		b1tog = 1;
+		// 	} else {
+		// 		b1tog = 0;
+		// 	}
+		// }
+		
+		// if (b1tog==1){
+		// 	// code executes if P3_7 is pressed
+		// 	C=C*1000;
+		// 	LCDprint("Cap in nanoF    ", 1, 1);
+		// 	sprintf(buffer, "%fnanoC", C);
+		// 	LCDprint(buffer, 2, 1);
+		// } else {
+		// 	LCDprint("Cap in microF   ", 1, 1);
+		// 	sprintf(buffer, "%fmicroC", C);
+		// 	LCDprint(buffer, 2, 1);
+		// }
 
-		printf("\rf=%luHz", F);
+		if (C > 0.1){
+			LCDprint("Cap in microF   ", 1, 1);
+			sprintf(buffer, "%fmicroF", C);
+			LCDprint(buffer, 2, 1);
+		} else {
+			C=C*950;
+			if (C < 8){
+				C=C*0.8;
+			}
+			LCDprint("Cap in nanoF    ", 1, 1);
+			sprintf(buffer, "%fnanoF", C);
+			LCDprint(buffer, 2, 1);
+		}
 		printf("\x1b[0K"); // ANSI: Clear from cursor to end of line.
-		
-		
-		// Send the period to the serial port
-        C = CalculateCapacitor(F);
-        sprintf(string, "%f", C);
-		LCDprint("Capacitor: ", 1, 1);		
-		LCDprint(string, 2, 1);
-    }
-
-    
+	}
 	
 }
