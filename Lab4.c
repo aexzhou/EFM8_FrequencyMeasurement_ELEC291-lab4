@@ -7,7 +7,6 @@
   
 #include <EFM8LB1.h>
 #include <stdio.h>
-#include <string.h>
 
 #define SYSCLK      72000000L  // SYSCLK frequency in Hz
 #define BAUDRATE      115200L  // Baud rate of UART in bps
@@ -224,13 +223,11 @@ int getsn (char * buff, int len)
 	return len;
 }
 char buffer[17];
-char buffer2[17];
 
 void main (void) 
 {
 	unsigned long F;
 	double C;
-	double D;
 	LCD_4BIT();	
 	TIMER0_Init();
 	waitms(500); // Give PuTTY a chance to start.
@@ -257,14 +254,10 @@ void main (void)
 		C=1.44/(F*((long)1550+2*(long)1550))*1000000;
 		printf("f=%luHz", F);
 		printf("\n");
-		D = C * (long)10;
 		
 
 		LCDprint("Capacitance(uF)   ", 1, 1);
-		sprintf(buffer2, "%f", D);
-		sprintf(buffer, "%f   ", C);
-		strncat(buffer, buffer2, 2);
-		strncat(buffer, "4");
+		sprintf(buffer, "%fuF", C);
 		LCDprint(buffer, 2, 1);
 
 		
