@@ -7,6 +7,7 @@
   
 #include <EFM8LB1.h>
 #include <stdio.h>
+#include <string.h>
 
 #define SYSCLK      72000000L  // SYSCLK frequency in Hz
 #define BAUDRATE      115200L  // Baud rate of UART in bps
@@ -222,17 +223,16 @@ int getsn (char * buff, int len)
 	buff[j]=0;
 	return len;
 }
-	char buffer[17];
+char buffer[17];
+char buffer2[17];
 
 void main (void) 
 {
 	unsigned long F;
 	double C;
-	int b1tog = 0;
-	// char buffer[17];
-	
+	double D;
+	LCD_4BIT();	
 	TIMER0_Init();
-
 	waitms(500); // Give PuTTY a chance to start.
 	printf("\x1b[2J"); // Clear screen using ANSI escape sequence.
 
@@ -241,8 +241,8 @@ void main (void)
 	        "Compiled: %s, %s\n\n",
 	        __FILE__, __DATE__, __TIME__);
 	        
-	LCD_4BIT();
-	LCDprint("Cap in microF   ", 1, 1);
+
+	LCDprint("Capacitance(uF)   ", 1, 1);
 
 	while(1)
 	{
@@ -254,24 +254,22 @@ void main (void)
 		waitms(1000);
 		TR0=0; // Stop Timer/Counter 0
 		F=overflow_count*0x10000L+TH0*0x100L+TL0;
-		C=1.44/(((long)1550+2*(long)1550)*F)*1000000;
-		printf("------------NEW DATA-------------\n");
+		C=1.44/(F*((long)1550+2*(long)1550))*1000000;
 		printf("f=%luHz", F);
 		printf("\n");
+		D = C * (long)10;
+		
 
-		if (C > 0.1){
-			LCDprint("Cap in microF   ", 1, 1);
-			sprintf(buffer, "%fmicroF", C);
-			LCDprint(buffer, 2, 1);
-		} else {
-			C=C*950;
-			if (C < 8){
-				C=C*0.8;
-			}
-			LCDprint("Cap in nanoF    ", 1, 1);
-			sprintf(buffer, "%fnanoF", C);
-			LCDprint(buffer, 2, 1);
-		}
+		LCDprint("Capacitance(uF)   ", 1, 1);
+		sprintf(buffer2, "%f", D);
+		sprintf(buffer, "%f   ", C);
+		strncat(buffer, buffer2, 2);
+		strncat(buffer, "4");
+		LCDprint(buffer, 2, 1);
+
+		
+
+
 		printf("\x1b[0K"); // ANSI: Clear from cursor to end of line.
 	}
 	
