@@ -258,26 +258,6 @@ void main (void)
 		printf("------------NEW DATA-------------\n");
 		printf("f=%luHz", F);
 		printf("\n");
-		// if (P3_7==0){
-		// 	while (P3_7);
-		// 	if (b1tog==0){
-		// 		b1tog = 1;
-		// 	} else {
-		// 		b1tog = 0;
-		// 	}
-		// }
-		
-		// if (b1tog==1){
-		// 	// code executes if P3_7 is pressed
-		// 	C=C*1000;
-		// 	LCDprint("Cap in nanoF    ", 1, 1);
-		// 	sprintf(buffer, "%fnanoC", C);
-		// 	LCDprint(buffer, 2, 1);
-		// } else {
-		// 	LCDprint("Cap in microF   ", 1, 1);
-		// 	sprintf(buffer, "%fmicroC", C);
-		// 	LCDprint(buffer, 2, 1);
-		// }
 
 		if (C > 0.1){
 			LCDprint("Cap in microF   ", 1, 1);
