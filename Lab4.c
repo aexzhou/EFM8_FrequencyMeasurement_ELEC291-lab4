@@ -19,7 +19,7 @@
 #define LCD_D6 P1_1
 #define LCD_D7 P1_0
 #define CHARS_PER_LINE 16
-
+#define pb P0_1
 
 unsigned char overflow_count;
 
@@ -228,6 +228,8 @@ void main (void)
 {
 	unsigned long F;
 	double C;
+	double P;
+	int flag = 0;
 	LCD_4BIT();	
 	TIMER0_Init();
 	waitms(500); // Give PuTTY a chance to start.
@@ -252,15 +254,34 @@ void main (void)
 		TR0=0; // Stop Timer/Counter 0
 		F=overflow_count*0x10000L+TH0*0x100L+TL0;
 		C=1.44/(F*((long)1550+2*(long)1550))*1000000;
+		P = 1/F;
 		printf("f=%luHz", F);
 		printf("\n");
+		if((pb == 0) && (flag == 0)){
+			flag = 1;
+		} else if((pb == 0) && (flag == 1)){
+			flag = 2;
+		} else if((pb == 0) && (flag == 2)){
+			flag = 0;
+		} 
+			
+			
 		
-
+		
+		
+		if(flag == 0){
 		LCDprint("Capacitance(uF)   ", 1, 1);
-		sprintf(buffer, "%fuF", C);
+		sprintf(buffer, "%guF", C);
 		LCDprint(buffer, 2, 1);
-
-		
+		} else if(flag == 1){
+		LCDprint("Frequency(Hz)   ", 1, 1);
+		sprintf(buffer, "%luHz", F);
+		LCDprint(buffer, 2, 1);		
+		} else if(flag == 2){
+		LCDprint("Period(s)   ", 1, 1);
+		sprintf(buffer, "%fS", P);
+		LCDprint(buffer, 2, 1);		
+		}		
 
 
 		printf("\x1b[0K"); // ANSI: Clear from cursor to end of line.
