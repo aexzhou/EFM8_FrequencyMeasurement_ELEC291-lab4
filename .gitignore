@@ -1,0 +1,8 @@
+*.hex
+*.obj
+*.map
+*.o
+*.elf
+*.lst
+*.lkr
+*.bat
