@@ -4,7 +4,6 @@
 //
 // The next line clears the "C51 command line options:" field when compiling with CrossIDE
 //  ~C51~
-  
 #include <EFM8LB1.h>
 #include <stdio.h>
 

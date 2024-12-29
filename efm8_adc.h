@@ -16,18 +16,6 @@
 #define ADC_PORT_IN P0_2 // ADC0.1 (ADC0P1) ADCCOMX: 00001
 #define ADC_MUX_SEL  0b00001
 
-
-void init_adc(void){
-    //configure voltage reference
-    REF0CN = 
-    
-}
-
-
-unsigned long read_adc(void){
-
-}
-
 ADCFactor = (float)ADC_VREF_MILLIVOLTS/ADC_2POWER10;
 
 for(delay = 0; delay < 16; delay++)
